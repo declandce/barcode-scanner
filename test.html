@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    function showCode() {
+      // Get the list of available video devices
+      navigator.mediaDevices.enumerateDevices()
+      .then(function(devices) {
+        var videoDevices = devices.filter(device => device.kind === 'videoinput');
+        if (videoDevices.length === 0) {
+          alert("No video devices found.");
+          return;
+        }
+        var cameraId = videoDevices[0].deviceId;
+        // Get the user's camera with the given constraints
+        var constraints = {
+          video: {
+            deviceId: cameraId
+          }
+        };
+        navigator.mediaDevices.getUserMedia(constraints)
+        .then(function(stream) {
+          // Display the camera feed in a video element
+          var video = document.getElementById("camera-feed");
+          video.srcObject = stream;
+          video.onloadedmetadata = function(e) {
+            video.play();
+          };
+        })
+        .catch(function(err) {
+          alert("An error occurred: " + err);
+        });
+      })
+      .catch(function(err) {
+        alert("An error occurred: " + err);
+      });
+    }
+
+    function captureCode() {
+      // Get the image data from the video element
+      var video = document.getElementById("camera-feed");
+      var canvas = document.getElementById("capture-canvas");
+      var context = canvas.getContext("2d");
+      context.drawImage(video, 0, 0, video.width, video.height);
+      var imageData = context.getImageData(0, 0, video.width, video.height);
+
+      // Extract the digits from the image data
+      // (This step would typically involve image processing to recognize the digits)
+      var code = "123456";
+
+      // Print the code to the text field
+      $("#code-text").val(code);
+    }
+  </script>
+</head>
+<body onload="showCode()">
+  <video id="camera-feed" width="320" height="240"></video>
+  <canvas id="capture-canvas" width="320" height="240" style="display:none;"></canvas>
+  <br>
+  <button onclick="captureCode()">Capture Code</button>
+  <br>
+  <label for="code-text">Inventory Code:</label>
+  <input type="text" id="code-text" read
