@@ -1,64 +1,43 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script>
-    function showCode() {
-      // Get the list of available video devices
-      navigator.mediaDevices.enumerateDevices()
-      .then(function(devices) {
-        var videoDevices = devices.filter(device => device.kind === 'videoinput');
-        if (videoDevices.length === 0) {
-          alert("No video devices found.");
-          return;
-        }
-        var cameraId = videoDevices[0].deviceId;
-        // Get the user's camera with the given constraints
-        var constraints = {
-          video: {
-            deviceId: cameraId
-          }
-        };
-        navigator.mediaDevices.getUserMedia(constraints)
-        .then(function(stream) {
-          // Display the camera feed in a video element
-          var video = document.getElementById("camera-feed");
-          video.srcObject = stream;
-          video.onloadedmetadata = function(e) {
-            video.play();
-          };
-        })
-        .catch(function(err) {
-          alert("An error occurred: " + err);
-        });
-      })
-      .catch(function(err) {
-        alert("An error occurred: " + err);
+  <head>
+    <title>Webcam OCR</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@v4.0.1/dist/tesseract.min.js"></script>
+  </head>
+  <body>
+    <video id="webcam" width="640" height="480" autoplay></video>
+    <canvas id="canvas"></canvas>
+    <textarea id="result"></textarea>
+    <script>
+      // Get the webcam video element
+      const webcam = document.getElementById("webcam");
+      
+      // Get the canvas element
+      const canvas = document.getElementById("canvas");
+      
+      // Get the result textarea element
+      const result = document.getElementById("result");
+      
+      // Get the user's webcam and set it as the source of the video element
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => webcam.srcObject = stream)
+        .catch(error => console.error(error));
+      
+      // When the webcam video is playing, take a snapshot of it
+      webcam.addEventListener("play", () => {
+        canvas.width = webcam.videoWidth;
+        canvas.height = webcam.videoHeight;
+        canvas.getContext("2d").drawImage(webcam, 0, 0);
       });
-    }
-
-    function captureCode() {
-      // Get the image data from the video element
-      var video = document.getElementById("camera-feed");
-      var canvas = document.getElementById("capture-canvas");
-      var context = canvas.getContext("2d");
-      context.drawImage(video, 0, 0, video.width, video.height);
-      var imageData = context.getImageData(0, 0, video.width, video.height);
-
-      // Extract the digits from the image data
-      // (This step would typically involve image processing to recognize the digits)
-      var code = "123456";
-
-      // Print the code to the text field
-      $("#code-text").val(code);
-    }
-  </script>
-</head>
-<body onload="showCode()">
-  <video id="camera-feed" width="320" height="240"></video>
-  <canvas id="capture-canvas" width="320" height="240" style="display:none;"></canvas>
-  <br>
-  <button onclick="captureCode()">Capture Code</button>
-  <br>
-  <label for="code-text">Inventory Code:</label>
-  <input type="text" id="code-text" read
+      
+      // When the user clicks on the canvas, use Tesseract.js to recognize the numbers
+      canvas.addEventListener("click", () => {
+        Tesseract.recognize(canvas)
+          .then(({ data: { text } }) => {
+            result.value = text;
+          })
+          .catch(error => console.error(error));
+      });
+    </script>
+  </body>
+</html>
